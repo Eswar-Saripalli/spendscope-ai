@@ -1,5 +1,5 @@
 import SpendForm from "@/features/form/SpendForm";
-
+import ResultsPanel from "@/features/results/ResultsPanel";
 export default function Home() {
   return (
     <main className="min-h-screen bg-black px-6 py-16 text-white">
@@ -71,7 +71,7 @@ export default function Home() {
       </section>
 
       <SpendForm />
-
+      <ResultsPanel />
     </main>
   );
 }

@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 
+import { generateAudit } from "@/utils/auditEngine";
+import { useAuditStore } from "@/lib/store";
+
 const tools = [
   "ChatGPT",
   "Claude",
@@ -10,14 +13,120 @@ const tools = [
   "Gemini",
 ];
 
+interface ToolEntry {
+  tool: string;
+  monthlySpend: string;
+}
+
 export default function SpendForm() {
-  const [selectedTool, setSelectedTool] = useState("ChatGPT");
-  const [monthlySpend, setMonthlySpend] = useState("");
-  const [teamSize, setTeamSize] = useState("");
+
+  const [toolEntries, setToolEntries] =
+    useState<ToolEntry[]>([
+      {
+        tool: "ChatGPT",
+        monthlySpend: "",
+      },
+    ]);
+
+  const [teamSize, setTeamSize] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const setResult = useAuditStore(
+    (state) => state.setResult
+  );
+
+  const handleToolChange = (
+    index: number,
+    field: keyof ToolEntry,
+    value: string
+  ) => {
+
+    const updatedEntries = [...toolEntries];
+
+    updatedEntries[index][field] = value;
+
+    setToolEntries(updatedEntries);
+  };
+
+  const addTool = () => {
+
+    setToolEntries([
+      ...toolEntries,
+      {
+        tool: "ChatGPT",
+        monthlySpend: "",
+      },
+    ]);
+  };
+
+  const removeTool = (
+    index: number
+  ) => {
+
+    const updatedEntries =
+      toolEntries.filter(
+        (_, i) => i !== index
+      );
+
+    setToolEntries(updatedEntries);
+  };
+
+  const handleGenerateAudit = async () => {
+
+    setLoading(true);
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, 1200)
+    );
+
+    let totalCurrentSpend = 0;
+
+    let totalOptimizedSpend = 0;
+
+    let allRecommendations: string[] = [];
+
+    toolEntries.forEach((entry) => {
+
+      const result = generateAudit({
+        tool: entry.tool,
+        monthlySpend: Number(
+          entry.monthlySpend
+        ),
+        teamSize: Number(teamSize),
+      });
+
+      totalCurrentSpend +=
+        result.currentSpend;
+
+      totalOptimizedSpend +=
+        result.optimizedSpend;
+
+      allRecommendations = [
+        ...allRecommendations,
+        ...result.recommendations,
+      ];
+    });
+
+    setResult({
+      currentSpend: totalCurrentSpend,
+      optimizedSpend: totalOptimizedSpend,
+      yearlySavings:
+        (totalCurrentSpend -
+          totalOptimizedSpend) *
+        12,
+      recommendations:
+        allRecommendations,
+    });
+
+    setLoading(false);
+  };
 
   return (
     <section className="mx-auto mt-20 max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur">
-      
+
       <h2 className="text-3xl font-bold">
         Start Your AI Spend Audit
       </h2>
@@ -26,41 +135,103 @@ export default function SpendForm() {
         Enter your current AI stack details to identify savings opportunities.
       </p>
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-8 space-y-8">
+
+        {toolEntries.map(
+          (entry, index) => (
+
+            <div
+              key={index}
+              className="space-y-4 rounded-2xl border border-white/10 p-4"
+            >
+
+              <div className="flex items-center justify-between">
+
+                <h3 className="text-sm font-semibold text-gray-300">
+                  Tool #{index + 1}
+                </h3>
+
+                {toolEntries.length > 1 && (
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      removeTool(index)
+                    }
+                    className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1 text-sm text-red-400 transition hover:bg-red-500/20"
+                  >
+                    Remove
+                  </button>
+
+                )}
+
+              </div>
+
+              {/* Tool Select */}
+
+              <div>
+
+                <label className="mb-2 block text-sm font-medium">
+                  AI Tool
+                </label>
+
+                <select
+                  value={entry.tool}
+                  onChange={(e) =>
+                    handleToolChange(
+                      index,
+                      "tool",
+                      e.target.value
+                    )
+                  }
+                  className="w-full cursor-pointer rounded-xl border border-white/10 bg-black p-4 text-white outline-none transition hover:border-white/30"
+                >
+                  {tools.map((tool) => (
+
+                    <option
+                      key={tool}
+                      value={tool}
+                    >
+                      {tool}
+                    </option>
+
+                  ))}
+                </select>
+
+              </div>
+
+              {/* Monthly Spend */}
+
+              <div>
+
+                <label className="mb-2 block text-sm font-medium">
+                  Monthly Spend ($)
+                </label>
+
+                <input
+                  type="number"
+                  placeholder="200"
+                  value={entry.monthlySpend}
+                  onChange={(e) =>
+                    handleToolChange(
+                      index,
+                      "monthlySpend",
+                      e.target.value
+                    )
+                  }
+                  className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none transition focus:border-white/40"
+                />
+
+              </div>
+
+            </div>
+          )
+        )}
+
+        {/* Team Size */}
 
         <div>
-          <label className="mb-2 block text-sm font-medium">
-            AI Tool
-          </label>
 
-          <select
-            value={selectedTool}
-            onChange={(e) => setSelectedTool(e.target.value)}
-            className="w-full cursor-pointer rounded-xl border border-white/10 bg-black p-4 text-white outline-none transition hover:border-white/30"
-          >
-            {tools.map((tool) => (
-              <option key={tool} value={tool}>
-                {tool}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Monthly Spend ($)
-          </label>
-
-          <input
-            type="number"
-            placeholder="200"
-            value={monthlySpend}
-            onChange={(e) => setMonthlySpend(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none transition focus:border-white/40"
-          />
-        </div>
-
-        <div>
           <label className="mb-2 block text-sm font-medium">
             Team Size
           </label>
@@ -69,16 +240,38 @@ export default function SpendForm() {
             type="number"
             placeholder="5"
             value={teamSize}
-            onChange={(e) => setTeamSize(e.target.value)}
+            onChange={(e) =>
+              setTeamSize(e.target.value)
+            }
             className="w-full rounded-xl border border-white/10 bg-black p-4 text-white outline-none transition focus:border-white/40"
           />
+
         </div>
 
-        <button className="w-full cursor-pointer rounded-2xl bg-white py-4 font-semibold text-black transition hover:scale-[1.01] hover:bg-gray-200">
-          Generate Audit
+        {/* Add Tool */}
+
+        <button
+          type="button"
+          onClick={addTool}
+          className="w-full cursor-pointer rounded-2xl border border-white/10 bg-black/30 py-4 font-semibold text-white transition duration-300 hover:border-white/20 hover:bg-white/5"
+        >
+          + Add Another Tool
+        </button>
+
+        {/* Generate Audit */}
+
+        <button
+          onClick={handleGenerateAudit}
+          disabled={loading}
+          className="w-full cursor-pointer rounded-2xl bg-white py-4 font-semibold text-black transition duration-300 hover:scale-[1.01] hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading
+            ? "Analyzing Spend..."
+            : "Generate Audit"}
         </button>
 
       </div>
+
     </section>
   );
 }
