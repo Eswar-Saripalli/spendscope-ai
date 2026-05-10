@@ -1,5 +1,7 @@
-import SpendForm from "@/features/form/SpendForm";
-import ResultsPanel from "@/features/results/ResultsPanel";
+import SpendForm from "../features/form/SpendForm";
+import ResultsPanel from "../features/results/ResultsPanel";
+import SpendChart from "../features/results/SpendChart";
+import DownloadReport from "../features/results/DownloadReport";
 export default function Home() {
   return (
     <main className="min-h-screen bg-black px-6 py-16 text-white">
@@ -72,6 +74,8 @@ export default function Home() {
 
       <SpendForm />
       <ResultsPanel />
+      <SpendChart />
+      <DownloadReport />
     </main>
   );
 }
