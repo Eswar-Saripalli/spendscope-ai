@@ -2,114 +2,80 @@
 
 import { useState } from "react";
 
-import { generateAudit } from "@/utils/auditEngine";
 import { useAuditStore } from "@/lib/store";
 
-const tools = [
+const TOOL_OPTIONS = [
   "ChatGPT",
   "Claude",
+  "Gemini",
   "Cursor",
   "GitHub Copilot",
-  "Gemini",
 ];
 
-interface ToolEntry {
+interface ToolInput {
   tool: string;
-  monthlySpend: string;
+  spend: number;
 }
 
 export default function SpendForm() {
-
-  const [toolEntries, setToolEntries] =
-    useState<ToolEntry[]>([
-      {
-        tool: "ChatGPT",
-        monthlySpend: "",
-      },
-    ]);
-
-  const [teamSize, setTeamSize] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
 
   const setResult = useAuditStore(
     (state) => state.setResult
   );
 
+  const [tools, setTools] = useState<ToolInput[]>([
+    {
+      tool: "ChatGPT",
+      spend: 200,
+    },
+  ]);
+
+  const [teamSize, setTeamSize] = useState(2);
+
+  const [loading, setLoading] = useState(false);
+
   const handleToolChange = (
     index: number,
-    field: keyof ToolEntry,
+    field: keyof ToolInput,
     value: string
   ) => {
 
-    const updatedEntries = [...toolEntries];
+    const updatedTools = [...tools];
 
-    updatedEntries[index][field] = value;
+    updatedTools[index] = {
+      ...updatedTools[index],
+      [field]:
+        field === "spend"
+          ? Number(value)
+          : value,
+    };
 
-    setToolEntries(updatedEntries);
+    setTools(updatedTools);
   };
 
   const addTool = () => {
 
-    setToolEntries([
-      ...toolEntries,
+    setTools([
+      ...tools,
       {
         tool: "ChatGPT",
-        monthlySpend: "",
+        spend: 0,
       },
     ]);
   };
 
-  const removeTool = (
-    index: number
-  ) => {
+  const removeTool = (index: number) => {
 
-    const updatedEntries =
-      toolEntries.filter(
-        (_, i) => i !== index
-      );
+    const updatedTools = tools.filter(
+      (_, i) => i !== index
+    );
 
-    setToolEntries(updatedEntries);
+    setTools(updatedTools);
   };
 
-  const handleGenerateAudit = async () => {
-
-    setError("");
-
-    if (!teamSize || Number(teamSize) <= 0) {
-
-      setError(
-        "Please enter a valid team size."
-      );
-
-      return;
-    }
-
-    for (const entry of toolEntries) {
-
-      if (
-        !entry.monthlySpend ||
-        Number(entry.monthlySpend) <= 0
-      ) {
-
-        setError(
-          "Please enter valid monthly spend values for all tools."
-        );
-
-        return;
-      }
-    }
+  const handleAudit = () => {
 
     setLoading(true);
-
-    await new Promise((resolve) =>
-      setTimeout(resolve, 1200)
-    );
 
     let totalCurrentSpend = 0;
 
@@ -117,187 +83,230 @@ export default function SpendForm() {
 
     let allRecommendations: string[] = [];
 
-    toolEntries.forEach((entry) => {
+    tools.forEach((item) => {
 
-      const result = generateAudit({
-        tool: entry.tool,
-        monthlySpend: Number(
-          entry.monthlySpend
-        ),
-        teamSize: Number(teamSize),
-      });
+      totalCurrentSpend += item.spend;
 
-      totalCurrentSpend +=
-        result.currentSpend;
+      let optimized = item.spend;
 
-      totalOptimizedSpend +=
-        result.optimizedSpend;
+      if (
+        item.tool === "ChatGPT" &&
+        item.spend >= 300
+      ) {
 
-      allRecommendations = [
-        ...allRecommendations,
-        ...result.recommendations,
-      ];
+        optimized -= 50;
+
+        allRecommendations.push(
+          "Downgrade from ChatGPT Team to ChatGPT Plus."
+        );
+      }
+
+      if (
+        item.tool === "Claude" &&
+        teamSize <= 5 &&
+        item.spend >= 100
+      ) {
+
+        optimized -= 20;
+
+        allRecommendations.push(
+          "Claude usage appears expensive for your current team size."
+        );
+      }
+
+      if (
+        item.tool === "Gemini" &&
+        teamSize <= 3 &&
+        item.spend >= 100
+      ) {
+
+        optimized -= 25;
+
+        allRecommendations.push(
+          "Consider switching to Gemini Advanced individual plans for smaller teams."
+        );
+      }
+
+      if (
+        item.tool === "Cursor" &&
+        teamSize <= 2 &&
+        item.spend >= 50
+      ) {
+
+        optimized -= 15;
+
+        allRecommendations.push(
+          "Cursor Pro may be unnecessary for a very small team."
+        );
+      }
+
+      if (
+        item.tool === "GitHub Copilot" &&
+        teamSize <= 2 &&
+        item.spend >= 70
+      ) {
+
+        optimized -= 10;
+
+        allRecommendations.push(
+          "GitHub Copilot Business may be unnecessary for a very small team."
+        );
+      }
+
+      totalOptimizedSpend += optimized;
     });
 
     setResult({
+
       currentSpend: totalCurrentSpend,
+
       optimizedSpend: totalOptimizedSpend,
+
       yearlySavings:
-        (totalCurrentSpend -
-          totalOptimizedSpend) *
-        12,
-      recommendations:
-        allRecommendations,
+        (totalCurrentSpend - totalOptimizedSpend) * 12,
+
+      recommendations: allRecommendations,
+
+      createdAt: new Date().toLocaleString(),
+
     });
 
     setLoading(false);
   };
 
   return (
-    <section className="mx-auto mt-20 w-full max-w-3xl px-4 sm:px-6">
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur sm:p-8">
+    <section className="mx-auto mt-16 w-full max-w-5xl px-4 sm:px-6">
 
-        <h2 className="text-2xl font-bold sm:text-3xl">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur sm:p-8">
+
+        <h2 className="text-3xl font-bold">
           Start Your AI Spend Audit
         </h2>
 
-        <p className="mt-2 text-sm text-gray-400 sm:text-base">
+        <p className="mt-2 text-gray-400">
           Enter your current AI stack details to identify savings opportunities.
         </p>
 
-        <div className="mt-8 space-y-8">
+        <div className="mt-8 space-y-6">
 
-          {error && (
+          {tools.map((item, index) => (
 
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+            <div
+              key={index}
+              className="rounded-2xl border border-white/10 p-5"
+            >
 
-              {error}
+              <div className="mb-4 flex items-center justify-between">
+
+                <h3 className="font-semibold">
+                  Tool #{index + 1}
+                </h3>
+
+                {tools.length > 1 && (
+
+                  <button
+                    onClick={() => removeTool(index)}
+                    className="rounded-lg border border-red-500/30 px-3 py-1 text-sm text-red-400 transition hover:bg-red-500/10"
+                  >
+                    Remove
+                  </button>
+
+                )}
+
+              </div>
+
+              <div>
+
+                <label className="text-sm text-gray-300">
+                  AI Tool
+                </label>
+
+                <select
+                  value={item.tool}
+                  onChange={(e) =>
+                    handleToolChange(
+                      index,
+                      "tool",
+                      e.target.value
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
+                >
+
+                  {TOOL_OPTIONS.map((tool) => (
+
+                    <option
+                      key={tool}
+                      value={tool}
+                    >
+                      {tool}
+                    </option>
+
+                  ))}
+
+                </select>
+
+              </div>
+
+              <div className="mt-5">
+
+                <label className="text-sm text-gray-300">
+                  Monthly Spend ($)
+                </label>
+
+                <input
+                  type="number"
+                  value={item.spend}
+                  onChange={(e) =>
+                    handleToolChange(
+                      index,
+                      "spend",
+                      e.target.value
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
+                />
+
+              </div>
 
             </div>
 
-          )}
-
-          {toolEntries.map(
-            (entry, index) => (
-
-              <div
-                key={index}
-                className="space-y-4 rounded-2xl border border-white/10 p-4"
-              >
-
-                <div className="flex items-center justify-between">
-
-                  <h3 className="text-sm font-semibold text-gray-300">
-                    Tool #{index + 1}
-                  </h3>
-
-                  {toolEntries.length > 1 && (
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeTool(index)
-                      }
-                      className="cursor-pointer rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/20 sm:text-sm"
-                    >
-                      Remove
-                    </button>
-
-                  )}
-
-                </div>
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium">
-                    AI Tool
-                  </label>
-
-                  <select
-                    value={entry.tool}
-                    onChange={(e) =>
-                      handleToolChange(
-                        index,
-                        "tool",
-                        e.target.value
-                      )
-                    }
-                    className="w-full cursor-pointer rounded-xl border border-white/10 bg-black p-3 text-sm text-white outline-none transition hover:border-white/30 sm:p-4 sm:text-base"
-                  >
-                    {tools.map((tool) => (
-
-                      <option
-                        key={tool}
-                        value={tool}
-                      >
-                        {tool}
-                      </option>
-
-                    ))}
-                  </select>
-
-                </div>
-
-                <div>
-
-                  <label className="mb-2 block text-sm font-medium">
-                    Monthly Spend ($)
-                  </label>
-
-                  <input
-                    type="number"
-                    placeholder="200"
-                    value={entry.monthlySpend}
-                    onChange={(e) =>
-                      handleToolChange(
-                        index,
-                        "monthlySpend",
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-xl border border-white/10 bg-black p-3 text-sm text-white outline-none transition focus:border-white/40 sm:p-4 sm:text-base"
-                  />
-
-                </div>
-
-              </div>
-            )
-          )}
+          ))}
 
           <div>
 
-            <label className="mb-2 block text-sm font-medium">
+            <label className="text-sm text-gray-300">
               Team Size
             </label>
 
             <input
               type="number"
-              placeholder="5"
               value={teamSize}
               onChange={(e) =>
-                setTeamSize(e.target.value)
+                setTeamSize(
+                  Number(e.target.value)
+                )
               }
-              className="w-full rounded-xl border border-white/10 bg-black p-3 text-sm text-white outline-none transition focus:border-white/40 sm:p-4 sm:text-base"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 outline-none"
             />
 
           </div>
 
           <button
-            type="button"
             onClick={addTool}
-            className="w-full cursor-pointer rounded-2xl border border-white/10 bg-black/30 py-3 text-sm font-semibold text-white transition duration-300 hover:border-white/20 hover:bg-white/5 sm:py-4 sm:text-base"
+            className="w-full rounded-2xl border border-white/10 bg-black py-4 font-semibold transition hover:bg-white/5"
           >
             + Add Another Tool
           </button>
 
           <button
-            onClick={handleGenerateAudit}
+            onClick={handleAudit}
             disabled={loading}
-            className="w-full cursor-pointer rounded-2xl bg-white py-3 text-sm font-semibold text-black transition duration-300 hover:scale-[1.01] hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-60 sm:py-4 sm:text-base"
+            className="w-full rounded-2xl bg-white py-4 font-semibold text-black transition hover:scale-[1.01]"
           >
             {loading
-              ? "Analyzing Spend..."
+              ? "Generating Audit..."
               : "Generate Audit"}
           </button>
 

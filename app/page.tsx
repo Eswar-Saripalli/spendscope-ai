@@ -1,9 +1,15 @@
+"use client";
+
 import SpendForm from "../features/form/SpendForm";
 import ResultsPanel from "../features/results/ResultsPanel";
 import SpendChart from "../features/results/SpendChart";
 import DownloadReport from "../features/results/DownloadReport";
+import AuditHistory from "../features/results/AuditHistory";
+
 export default function Home() {
+
   return (
+
     <main className="min-h-screen bg-black px-6 py-16 text-white">
 
       <section className="mx-auto flex max-w-6xl flex-col items-center text-center">
@@ -24,18 +30,49 @@ export default function Home() {
         </p>
 
         <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-          <button className="rounded-2xl bg-white px-8 py-4 font-semibold text-black transition hover:scale-105">
+
+          <button
+            onClick={() => {
+
+              const section =
+                document.getElementById(
+                  "audit-form"
+                );
+
+              section?.scrollIntoView({
+                behavior: "smooth",
+              });
+
+            }}
+            className="rounded-2xl bg-white px-8 py-4 font-semibold text-black transition hover:scale-105"
+          >
             Start Free Audit
           </button>
 
-          <button className="rounded-2xl border border-white/20 px-8 py-4 font-semibold transition hover:bg-white/10">
+          <button
+            onClick={() => {
+
+              const section =
+                document.getElementById(
+                  "results-section"
+                );
+
+              section?.scrollIntoView({
+                behavior: "smooth",
+              });
+
+            }}
+            className="rounded-2xl border border-white/20 px-8 py-4 font-semibold transition hover:bg-white/10"
+          >
             View Demo
           </button>
+
         </div>
 
         <div className="mt-16 grid w-full grid-cols-1 gap-6 md:grid-cols-3">
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+
             <h3 className="text-xl font-semibold">
               Instant Savings Audit
             </h3>
@@ -44,9 +81,11 @@ export default function Home() {
               Discover where your startup is wasting money
               on AI subscriptions and API usage.
             </p>
+
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+
             <h3 className="text-xl font-semibold">
               Smarter Recommendations
             </h3>
@@ -55,9 +94,11 @@ export default function Home() {
               Get personalized plan downgrades and alternative
               tool suggestions based on your usage.
             </p>
+
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur">
+
             <h3 className="text-xl font-semibold">
               Shareable Reports
             </h3>
@@ -66,16 +107,31 @@ export default function Home() {
               Generate beautiful public audit reports
               with annual savings breakdowns.
             </p>
+
           </div>
 
         </div>
 
       </section>
 
-      <SpendForm />
-      <ResultsPanel />
-      <SpendChart />
-      <DownloadReport />
+      <div id="audit-form">
+
+        <SpendForm />
+
+      </div>
+
+      <div id="results-section">
+
+        <ResultsPanel />
+
+        <SpendChart />
+
+        <DownloadReport />
+
+        <AuditHistory />
+
+      </div>
+
     </main>
   );
 }
