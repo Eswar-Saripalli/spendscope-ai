@@ -18,7 +18,7 @@ export default function Home() {
           AI Spend Optimization Platform
         </div>
 
-        <h1 className="max-w-5xl text-5xl font-extrabold leading-tight md:text-7xl">
+       <h1 className="max-w-5xl text-4xl font-extrabold leading-tight sm:text-5xl md:text-7xl">
           Stop Overpaying <br />
           For AI Tools
         </h1>
